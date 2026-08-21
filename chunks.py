@@ -50,6 +50,7 @@ def chunk_text_line(text):
 
     return chunks
 
+# ---- 3. Recursive algorithm to chunk text optimally
 
 def find_best_separator(text, separators):
     """
@@ -60,14 +61,15 @@ def find_best_separator(text, separators):
         separators (list): A list of separators to try for splitting.
 
     Returns:
-        str: The best separator found in the text, or an empty string if none are found.
+        str: The best separator found in the text, or None if none are found.
     """
 
     for sep in separators:
         if sep in text:
             return sep
 
-    return ''
+    return None
+
 
 # Recursive algorithm to chunk text optimally
 def chunk_text_recursive(text, max_length=150, separators=None):
@@ -85,21 +87,66 @@ def chunk_text_recursive(text, max_length=150, separators=None):
     """
 
     if separators is None:
-        separators = ['\n', '\n\n', '.', '!', '?', ',', ' ', ';', ':']
+        separators = ['\n\n', '\n', '. ', '! ', '? ', ', ', ' ']
+
+    text = text.strip() # Remove leading and trailing whitespace    
 
     if len(text) <= max_length:
         return [text]
 
     separator = find_best_separator(text, separators)
 
+    # print(f"Using separator: '{repr(separator)}' for chunking.")
+
+    # If no suitable separator is found, return the entire text as a single chunk
+    if not separator:
+        return [text]
+
     pieces = text.split(separator)
 
     chunks = []
+    current_chunk = ""
 
     for piece in pieces:
-        if len(piece) <= max_length:
-            chunks.append(piece)
+        piece = piece.strip() # Remove leading and trailing whitespace
+        # print(f"Piece length: {len(piece)}")
+
+        if not piece:
+            continue
+
+        # case A: piece is TOO LARGE, we need to chunk it recursively
+        if len(piece) > max_length:
+            # first save whatever we have already accumulated in current_chunk
+            if current_chunk:
+                chunks.append(current_chunk)
+                current_chunk = ""
+
+                # now recursively chunk the overized piece using a smaller separator
+                smaller_chunks = chunk_text_recursive(piece, max_length, separators[1:])
+                # add those chunks to the main list of chunks
+                chunks.extend(smaller_chunks)
+        
+        # case B: piece fits in the current chunk
         else:
-            chunks.extend(chunk_text_recursive(piece, max_length, separators))
+            # if current chunk is empty, start it with this piece.
+            if not current_chunk:
+                current_chunk = piece
+
+            else:
+                # try adding this piece to the curent chunk.
+                candidate = (current_chunk + separator + piece)
+
+                # does it fit?
+                if len(candidate) <= max_length:
+                    current_chunk = candidate
+                else:
+                    # it doesn't fit, so save the current chunk and start a new one with this piece.
+                    chunks.append(current_chunk)
+                    current_chunk = piece
+
+
+    # Save final chunk if it has content
+    if current_chunk:
+        chunks.append(current_chunk)
 
     return chunks

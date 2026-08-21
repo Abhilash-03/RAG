@@ -1,5 +1,6 @@
 import chromadb;
 from sentence_transformers import SentenceTransformer
+from chunks import chunk_text_recursive
 
 client = chromadb.PersistentClient(path="./chroma_db")
 
@@ -36,7 +37,7 @@ def chunk_text(text, chunk_size=300, overlap=80):
 with open("data/knowledge.txt", 'r', encoding='utf-8') as file:
     text = file.read()
 
-chunks = chunk_text(text)
+chunks = chunk_text_recursive(text)
 
 # Create embeddings for each chunk using the SentenceTransformer model
 model = SentenceTransformer('all-MiniLM-L6-v2')
